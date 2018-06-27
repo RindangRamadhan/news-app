@@ -2,16 +2,11 @@ import React, { Component } from 'react'
 import { FlatList, StyleSheet } from 'react-native'
 import axios from 'axios'
 import Article from '../components/News'
+import { connect } from 'react-redux'
+import { bindActionCreators } from 'redux'
+import { setNews } from '../store/actions'
 
-export default class Home extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      articles: [],
-      refresPage: true
-    }
-  }
+class Home extends React.Component {
 
   componentDidMount() {
     this.getNews();
@@ -22,30 +17,40 @@ export default class Home extends React.Component {
 
     axios.get(url)
       .then(resp => {
-          this.setState({ articles : resp.data.articles, refresPage : false })
+          this.props.setNews(resp.data.articles)
       })
       .catch(err => {
           console.log(err)
-          this.setState({ refresPage: false })
       })
   }
 
   handleRefresh() {
-    this.setState({ refresPage: true }, () => this.getNews());
+    this.props.redux.refresPage = true
+    this.getNews()
   }
 
   render() {
-		const {articles, refresPage} = this.state
+		const {news, refresPage} = this.props.redux
 		const {navigate} = this.props.navigate
 
     return (
       <FlatList
-        data={ articles }
+        data={ news }
         renderItem={({ item }) => <Article article={item} navigate={navigate} />}
         keyExtractor={(item,index) => index.toString()}
-        refreshing={ refresPage }
+        refreshing={refresPage}
         onRefresh={ this.handleRefresh.bind(this) }
       />
     );
   }
 }
+
+const mapStateToProps = (state) => {
+  return {
+    redux: state
+  }
+}
+
+const mapDispatchToProps = (dispatch) => bindActionCreators({setNews}, dispatch)
+
+export default connect(mapStateToProps, mapDispatchToProps)(Home)
